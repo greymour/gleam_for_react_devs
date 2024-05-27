@@ -153,28 +153,28 @@ var Error = class extends Result {
 function isEqual(x, y) {
   let values = [x, y];
   while (values.length) {
-    let a = values.pop();
+    let a2 = values.pop();
     let b = values.pop();
-    if (a === b)
+    if (a2 === b)
       continue;
-    if (!isObject(a) || !isObject(b))
+    if (!isObject(a2) || !isObject(b))
       return false;
-    let unequal = !structurallyCompatibleObjects(a, b) || unequalDates(a, b) || unequalBuffers(a, b) || unequalArrays(a, b) || unequalMaps(a, b) || unequalSets(a, b) || unequalRegExps(a, b);
+    let unequal = !structurallyCompatibleObjects(a2, b) || unequalDates(a2, b) || unequalBuffers(a2, b) || unequalArrays(a2, b) || unequalMaps(a2, b) || unequalSets(a2, b) || unequalRegExps(a2, b);
     if (unequal)
       return false;
-    const proto = Object.getPrototypeOf(a);
+    const proto = Object.getPrototypeOf(a2);
     if (proto !== null && typeof proto.equals === "function") {
       try {
-        if (a.equals(b))
+        if (a2.equals(b))
           continue;
         else
           return false;
       } catch {
       }
     }
-    let [keys2, get2] = getters(a);
-    for (let k of keys2(a)) {
-      values.push(get2(a, k), get2(b, k));
+    let [keys2, get2] = getters(a2);
+    for (let k of keys2(a2)) {
+      values.push(get2(a2, k), get2(b, k));
     }
   }
   return true;
@@ -187,34 +187,34 @@ function getters(object3) {
     return [(x) => [...extra, ...Object.keys(x)], (x, y) => x[y]];
   }
 }
-function unequalDates(a, b) {
-  return a instanceof Date && (a > b || a < b);
+function unequalDates(a2, b) {
+  return a2 instanceof Date && (a2 > b || a2 < b);
 }
-function unequalBuffers(a, b) {
-  return a.buffer instanceof ArrayBuffer && a.BYTES_PER_ELEMENT && !(a.byteLength === b.byteLength && a.every((n, i) => n === b[i]));
+function unequalBuffers(a2, b) {
+  return a2.buffer instanceof ArrayBuffer && a2.BYTES_PER_ELEMENT && !(a2.byteLength === b.byteLength && a2.every((n, i) => n === b[i]));
 }
-function unequalArrays(a, b) {
-  return Array.isArray(a) && a.length !== b.length;
+function unequalArrays(a2, b) {
+  return Array.isArray(a2) && a2.length !== b.length;
 }
-function unequalMaps(a, b) {
-  return a instanceof Map && a.size !== b.size;
+function unequalMaps(a2, b) {
+  return a2 instanceof Map && a2.size !== b.size;
 }
-function unequalSets(a, b) {
-  return a instanceof Set && (a.size != b.size || [...a].some((e) => !b.has(e)));
+function unequalSets(a2, b) {
+  return a2 instanceof Set && (a2.size != b.size || [...a2].some((e) => !b.has(e)));
 }
-function unequalRegExps(a, b) {
-  return a instanceof RegExp && (a.source !== b.source || a.flags !== b.flags);
+function unequalRegExps(a2, b) {
+  return a2 instanceof RegExp && (a2.source !== b.source || a2.flags !== b.flags);
 }
-function isObject(a) {
-  return typeof a === "object" && a !== null;
+function isObject(a2) {
+  return typeof a2 === "object" && a2 !== null;
 }
-function structurallyCompatibleObjects(a, b) {
-  if (typeof a !== "object" && typeof b !== "object" && (!a || !b))
+function structurallyCompatibleObjects(a2, b) {
+  if (typeof a2 !== "object" && typeof b !== "object" && (!a2 || !b))
     return false;
   let nonstructural = [Promise, WeakSet, WeakMap, Function];
-  if (nonstructural.some((c) => a instanceof c))
+  if (nonstructural.some((c) => a2 instanceof c))
     return false;
-  return a.constructor === b.constructor;
+  return a2.constructor === b.constructor;
 }
 function makeError(variant, module, line, fn, message, extra) {
   let error = new globalThis.Error(message);
@@ -238,8 +238,8 @@ var None = class extends CustomType {
 };
 function to_result(option, e) {
   if (option instanceof Some) {
-    let a = option[0];
-    return new Ok(a);
+    let a2 = option[0];
+    return new Ok(a2);
   } else {
     return new Error(e);
   }
@@ -376,8 +376,8 @@ var DecodeError = class extends CustomType {
     this.path = path;
   }
 };
-function from(a) {
-  return identity(a);
+function from(a2) {
+  return identity(a2);
 }
 function string(data) {
   return decode_string(data);
@@ -471,8 +471,8 @@ function hashByReference(o) {
   referenceMap.set(o, hash);
   return hash;
 }
-function hashMerge(a, b) {
-  return a ^ b + 2654435769 + (a << 6) + (a >> 2) | 0;
+function hashMerge(a2, b) {
+  return a2 ^ b + 2654435769 + (a2 << 6) + (a2 >> 2) | 0;
 }
 function hashString(s) {
   let hash = 0;
@@ -1404,6 +1404,9 @@ var Event = class extends CustomType {
 function attribute(name, value3) {
   return new Attribute(name, from(value3), false);
 }
+function property(name, value3) {
+  return new Attribute(name, from(value3), true);
+}
 function on(name, handler) {
   return new Event("on" + name, handler);
 }
@@ -1426,6 +1429,12 @@ function class$(name) {
 }
 function value(val) {
   return attribute("value", val);
+}
+function disabled(is_disabled) {
+  return property("disabled", is_disabled);
+}
+function href(uri) {
+  return attribute("href", uri);
 }
 
 // build/dev/javascript/lustre/lustre/element.mjs
@@ -1567,7 +1576,7 @@ function createElementNode({ prev, next, dispatch, stack }) {
     handlersForEl = registeredHandlers.get(el2);
   }
   const prevHandlers = canMorph ? new Set(handlersForEl.keys()) : null;
-  const prevAttributes = canMorph ? new Set(Array.from(prev.attributes, (a) => a.name)) : null;
+  const prevAttributes = canMorph ? new Set(Array.from(prev.attributes, (a2) => a2.name)) : null;
   let className = null;
   let style2 = null;
   let innerHTML = null;
@@ -1701,8 +1710,8 @@ function lustreServerEventHandler(event2) {
   return {
     tag,
     data: include.reduce(
-      (data2, property) => {
-        const path = property.split(".");
+      (data2, property2) => {
+        const path = property2.split(".");
         for (let i = 0, o = data2, e = event2; i < path.length; i++) {
           if (i === path.length - 1) {
             o[path[i]] = e[path[i]];
@@ -1908,6 +1917,7 @@ var start = (app, selector, flags) => LustreClientApplication2.start(
   app.view
 );
 var is_browser = () => window && window.document;
+var prevent_default = (event2) => event2.preventDefault();
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
@@ -1950,14 +1960,32 @@ function start3(app, selector, flags) {
 }
 
 // build/dev/javascript/lustre/lustre/element/html.mjs
+function main(attrs, children) {
+  return element("main", attrs, children);
+}
+function nav(attrs, children) {
+  return element("nav", attrs, children);
+}
 function div(attrs, children) {
   return element("div", attrs, children);
+}
+function li(attrs, children) {
+  return element("li", attrs, children);
 }
 function p(attrs, children) {
   return element("p", attrs, children);
 }
+function ul(attrs, children) {
+  return element("ul", attrs, children);
+}
+function a(attrs, children) {
+  return element("a", attrs, children);
+}
 function button(attrs, children) {
   return element("button", attrs, children);
+}
+function form(attrs, children) {
+  return element("form", attrs, children);
 }
 function input(attrs) {
   return element("input", attrs, toList([]));
@@ -1984,6 +2012,15 @@ function on_input(msg) {
     (event2) => {
       let _pipe = value2(event2);
       return map2(_pipe, msg);
+    }
+  );
+}
+function on_submit(msg) {
+  return on2(
+    "submit",
+    (event2) => {
+      let $ = prevent_default(event2);
+      return new Ok(msg);
     }
   );
 }
@@ -2152,13 +2189,13 @@ function alert(alert_text) {
           ["display", "flex"],
           ["align-items", "center"],
           ["justify-content", "center"],
-          ["width", "100%"],
-          ["height", "100%"],
+          ["width", "100vw"],
+          ["height", "100vh"],
           ["position", "absolute"],
-          ["top", "2rem"],
-          ["right", "auto"],
-          ["left", "auto"],
-          ["bottom", "auto"],
+          ["top", "0"],
+          ["right", "0"],
+          ["left", "0"],
+          ["bottom", "0"],
           ["background", "rgba(0, 0, 0, 0.5)"]
         ])
       )
@@ -2166,102 +2203,158 @@ function alert(alert_text) {
     toList([
       div(
         toList([
-          style(
-            toList([
-              ["color", "red"],
-              ["font-weight", "bold"],
-              ["font-size", "1.25rem"],
-              ["padding", "0.75rem"],
-              ["background-color", "#F0F0F0"],
-              ["border", "1px solid #CCCCCC"],
-              ["border-radius", "0.25rem"],
-              ["width", "400px"],
-              ["height", "400px"],
-              ["display", "flex"],
-              ["flex-direction", "column"],
-              ["align-items", "center"],
-              ["justify-content", "center"]
-            ])
+          style(toList([["width", "400px"], ["height", "400px"]])),
+          class$(
+            "flex flex-col align-center items-center justify-center bg-slate-200 p-2 border-2 border-slate-500 rounded width-10 height-10 font-bold"
           )
         ]),
         toList([
-          button(toList([on_click(new AlertClosed())]), toList([text("close")])),
-          p(toList([]), toList([text(alert_text)]))
+          p(toList([]), toList([text(alert_text)])),
+          button(toList([on_click(new AlertClosed())]), toList([text("close")]))
+        ])
+      )
+    ])
+  );
+}
+function header() {
+  return div(
+    toList([
+      class$("fixed top-0 py-3 px-2 bottom-auto w-full bg-slate-100 shadow-sm")
+    ]),
+    toList([
+      nav(
+        toList([class$("container mx-auto")]),
+        toList([
+          ul(
+            toList([class$("flex flex-row align-center justify-center")]),
+            toList([
+              li(
+                toList([class$("mr-2")]),
+                toList([a(toList([href("/home/")]), toList([text("Home")]))])
+              ),
+              li(
+                toList([]),
+                toList([a(toList([href("/blog/")]), toList([text("Blog")]))])
+              )
+            ])
+          )
         ])
       )
     ])
   );
 }
 function view(model) {
-  return div(
-    toList([]),
+  return fragment(
     toList([
-      p(toList([]), toList([text("Username")])),
-      input(
+      header(),
+      main(
+        toList([class$("pt-20")]),
         toList([
-          value(model.user_username),
-          on_input(
-            (val) => {
-              return new UserMsg(new UserEnteredUsername(val));
-            }
+          div(
+            toList([class$("container")]),
+            toList([
+              form(
+                toList([
+                  on_submit(new UserMsg(new UserSubmittedLoginForm())),
+                  class$("login-form shadow-sm")
+                ]),
+                toList([
+                  p(toList([]), toList([text("Username")])),
+                  input(
+                    toList([
+                      value(model.user_username),
+                      on_input(
+                        (val) => {
+                          return new UserMsg(new UserEnteredUsername(val));
+                        }
+                      )
+                    ])
+                  ),
+                  p(toList([]), toList([text("Password")])),
+                  input(
+                    toList([
+                      value(model.user_password),
+                      on_input(
+                        (val) => {
+                          return new UserMsg(new UserEnteredPassword(val));
+                        }
+                      )
+                    ])
+                  ),
+                  button(
+                    toList([on_click(new UserMsg(new UserSubmittedLoginForm()))]),
+                    toList([text("sign in")])
+                  )
+                ])
+              ),
+              button(
+                toList([on_click(new UserMsg(new UserCreatedAccount()))]),
+                toList([text("create user")])
+              ),
+              button(
+                toList([on_click(new UserMsg(new UserUpdatedAccount()))]),
+                toList([text("update user")])
+              ),
+              button(
+                toList([
+                  on_click(new UserMsg(new UserDeletedAccount())),
+                  disabled(
+                    (() => {
+                      let $ = model.user;
+                      if ($ instanceof Some) {
+                        return false;
+                      } else {
+                        return true;
+                      }
+                    })()
+                  )
+                ]),
+                toList([text("delete user")])
+              ),
+              button(
+                toList([
+                  on_click(new UserMsg(new UserSignedOut())),
+                  disabled(
+                    (() => {
+                      let $ = model.user;
+                      if ($ instanceof Some) {
+                        return false;
+                      } else {
+                        return true;
+                      }
+                    })()
+                  )
+                ]),
+                toList([text("sign out")])
+              ),
+              button(
+                toList([on_click(new AlertOpened("Hello!"))]),
+                toList([text("open alert")])
+              ),
+              user_card(model.user),
+              (() => {
+                let $ = model.show_alert;
+                if ($) {
+                  return alert(model.alert_text);
+                } else {
+                  return fragment(toList([]));
+                }
+              })()
+            ])
           )
         ])
-      ),
-      p(toList([]), toList([text("Password")])),
-      input(
-        toList([
-          value(model.user_password),
-          on_input(
-            (val) => {
-              return new UserMsg(new UserEnteredPassword(val));
-            }
-          )
-        ])
-      ),
-      button(
-        toList([on_click(new UserMsg(new UserSubmittedLoginForm()))]),
-        toList([text("sign in")])
-      ),
-      button(
-        toList([on_click(new UserMsg(new UserCreatedAccount()))]),
-        toList([text("create user")])
-      ),
-      button(
-        toList([on_click(new UserMsg(new UserUpdatedAccount()))]),
-        toList([text("update user")])
-      ),
-      button(
-        toList([on_click(new UserMsg(new UserDeletedAccount()))]),
-        toList([text("delete user")])
-      ),
-      button(
-        toList([on_click(new UserMsg(new UserSignedOut()))]),
-        toList([text("sign out")])
-      ),
-      button(
-        toList([on_click(new AlertOpened("Hello!"))]),
-        toList([text("open alert")])
-      ),
-      user_card(model.user),
-      (() => {
-        let $ = model.show_alert;
-        if ($) {
-          return alert(model.alert_text);
-        } else {
-          return fragment(toList([]));
-        }
-      })()
+      )
     ])
   );
 }
-function main() {
+function main2() {
   let app = simple(init2, update2, view);
   let $ = start3(app, "#app", void 0);
   if (!$.isOk()) {
     throw makeError(
       "assignment_no_match",
       "lustre_for_react_devs",
-      26,
+      20,
       "main",
       "Assignment pattern did not match",
       { value: $ }
@@ -2271,4 +2364,4 @@ function main() {
 }
 
 // build/.lustre/entry.mjs
-main();
+main2();

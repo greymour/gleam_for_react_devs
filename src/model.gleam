@@ -1,10 +1,7 @@
 import gleam/option.{type Option}
 
 pub type User {
-  User(
-    id: Int,
-    name: String,
-  )
+  User(id: Int, name: String)
 }
 
 pub type Model {
@@ -14,5 +11,6 @@ pub type Model {
     alert_text: String,
     user_username: String,
     user_password: String,
+    user_store: List(User),
   )
 }

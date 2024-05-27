@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-family: Helvetica;
+}
+
+div.container {
+  margin: 0 auto;
+  max-width: 1140px;
+}
+
+form.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #F3F3F3;
+  border-radius: 1rem;
+  padding: 1rem;
+  width: 400px;
+  margin: 1rem auto;
+
+  p {
+    margin: 0.25rem;
+  }
+
+  input {
+    margin-bottom: 1rem;
+  }
+}
+
+button {
+  outline: none;
+  padding: 0.25rem 0.5rem 0.35rem;
+  background: #4f73df;
+  border: 1px solid #0B0B0B;
+  border-radius: 0.5rem;
+  color: #FFFFFF;
+  transition: background 100ms ease-in-out;
+  font-size: 1rem;
+}
+
+button:hover {
+    background: #3b5ab5;
+    cursor: pointer;
+}
+
+button:disabled {
+  background: #ababab;
+  color: #F3F3F3;
+}
+
+button:disabled:hover {
+  cursor: initial;
+}
