@@ -151,10 +151,10 @@ var Error = class extends Result {
   }
 };
 function isEqual(x, y) {
-  let values = [x, y];
-  while (values.length) {
-    let a2 = values.pop();
-    let b = values.pop();
+  let values2 = [x, y];
+  while (values2.length) {
+    let a2 = values2.pop();
+    let b = values2.pop();
     if (a2 === b)
       continue;
     if (!isObject(a2) || !isObject(b))
@@ -174,7 +174,7 @@ function isEqual(x, y) {
     }
     let [keys2, get2] = getters(a2);
     for (let k of keys2(a2)) {
-      values.push(get2(a2, k), get2(b, k));
+      values2.push(get2(a2, k), get2(b, k));
     }
   }
   return true;
@@ -329,6 +329,25 @@ function fold_right(list, initial, fun) {
     return fun(fold_right(rest$1, initial, fun), x);
   }
 }
+function find(loop$haystack, loop$is_desired) {
+  while (true) {
+    let haystack = loop$haystack;
+    let is_desired = loop$is_desired;
+    if (haystack.hasLength(0)) {
+      return new Error(void 0);
+    } else {
+      let x = haystack.head;
+      let rest$1 = haystack.tail;
+      let $ = is_desired(x);
+      if ($) {
+        return new Ok(x);
+      } else {
+        loop$haystack = rest$1;
+        loop$is_desired = is_desired;
+      }
+    }
+  }
+}
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
 function map2(result, fun) {
@@ -407,8 +426,8 @@ function any(decoders) {
     }
   };
 }
-function push_path(error, name) {
-  let name$1 = from(name);
+function push_path(error, name2) {
+  let name$1 = from(name2);
   let decoder = any(
     toList([string, (x) => {
       return map2(int(x), to_string2);
@@ -435,11 +454,11 @@ function map_errors(result, f) {
     }
   );
 }
-function field(name, inner_type) {
+function field(name2, inner_type) {
   return (value3) => {
     let missing_field_error = new DecodeError("field", "nothing", toList([]));
     return try$(
-      decode_field(value3, name),
+      decode_field(value3, name2),
       (maybe_inner) => {
         let _pipe = maybe_inner;
         let _pipe$1 = to_result(_pipe, toList([missing_field_error]));
@@ -447,7 +466,7 @@ function field(name, inner_type) {
         return map_errors(
           _pipe$2,
           (_capture) => {
-            return push_path(_capture, name);
+            return push_path(_capture, name2);
           }
         );
       }
@@ -827,7 +846,7 @@ function collisionIndexOf(root2, key) {
   }
   return -1;
 }
-function find(root2, shift, hash, key) {
+function find2(root2, shift, hash, key) {
   switch (root2.type) {
     case ARRAY_NODE:
       return findArray(root2, shift, hash, key);
@@ -844,7 +863,7 @@ function findArray(root2, shift, hash, key) {
     return void 0;
   }
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key);
+    return find2(node, shift + SHIFT, hash, key);
   }
   if (isEqual(key, node.k)) {
     return node;
@@ -859,7 +878,7 @@ function findIndex(root2, shift, hash, key) {
   const idx = index(root2.bitmap, bit);
   const node = root2.array[idx];
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key);
+    return find2(node, shift + SHIFT, hash, key);
   }
   if (isEqual(key, node.k)) {
     return node;
@@ -1064,7 +1083,7 @@ var Dict = class _Dict {
     if (this.root === void 0) {
       return notFound;
     }
-    const found = find(this.root, 0, getHash(key), key);
+    const found = find2(this.root, 0, getHash(key), key);
     if (found === void 0) {
       return notFound;
     }
@@ -1109,7 +1128,7 @@ var Dict = class _Dict {
     if (this.root === void 0) {
       return false;
     }
-    return find(this.root, 0, getHash(key), key) !== void 0;
+    return find2(this.root, 0, getHash(key), key) !== void 0;
   }
   /**
    * @returns {[K,V][]}
@@ -1177,12 +1196,24 @@ function print_debug(string3) {
     console.log(string3);
   }
 }
+function new_map() {
+  return Dict.new();
+}
+function map_to_list(map4) {
+  return List.fromArray(map4.entries());
+}
+function map_remove(key, map4) {
+  return map4.delete(key);
+}
 function map_get(map4, key) {
   const value3 = map4.get(key, NOT_FOUND);
   if (value3 === NOT_FOUND) {
     return new Error(Nil);
   }
   return new Ok(value3);
+}
+function map_insert(key, value3, map4) {
+  return map4.set(key, value3);
 }
 function classify_dynamic(data) {
   if (typeof data === "string") {
@@ -1226,17 +1257,17 @@ function decode_string(data) {
 function decode_int(data) {
   return Number.isInteger(data) ? new Ok(data) : decoder_error("Int", data);
 }
-function decode_field(value3, name) {
+function decode_field(value3, name2) {
   const not_a_map_error = () => decoder_error("Dict", value3);
   if (value3 instanceof Dict || value3 instanceof WeakMap || value3 instanceof Map) {
-    const entry = map_get(value3, name);
+    const entry = map_get(value3, name2);
     return new Ok(entry.isOk() ? new Some(entry[0]) : new None());
   } else if (value3 === null) {
     return not_a_map_error();
   } else if (Object.getPrototypeOf(value3) == Object.prototype) {
-    return try_get_field(value3, name, () => new Ok(new None()));
+    return try_get_field(value3, name2, () => new Ok(new None()));
   } else {
-    return try_get_field(value3, name, not_a_map_error);
+    return try_get_field(value3, name2, not_a_map_error);
   }
 }
 function try_get_field(value3, field2, or_else) {
@@ -1298,13 +1329,13 @@ function inspectDict(map4) {
   return body + "])";
 }
 function inspectObject(v) {
-  const name = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
   const props = [];
   for (const k of Object.keys(v)) {
     props.push(`${inspect(k)}: ${inspect(v[k])}`);
   }
   const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name === "Object" ? "" : name + " ";
+  const head = name2 === "Object" ? "" : name2 + " ";
   return `//js(${head}{${body}})`;
 }
 function inspectCustomType(record) {
@@ -1322,6 +1353,69 @@ function inspectBitArray(bits) {
 }
 function inspectUtfCodepoint(codepoint2) {
   return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/dict.mjs
+function new$() {
+  return new_map();
+}
+function insert(dict, key, value3) {
+  return map_insert(key, value3, dict);
+}
+function fold_list_of_pair(loop$list, loop$initial) {
+  while (true) {
+    let list = loop$list;
+    let initial = loop$initial;
+    if (list.hasLength(0)) {
+      return initial;
+    } else {
+      let x = list.head;
+      let rest = list.tail;
+      loop$list = rest;
+      loop$initial = insert(initial, x[0], x[1]);
+    }
+  }
+}
+function from_list(list) {
+  return fold_list_of_pair(list, new$());
+}
+function reverse_and_concat(loop$remaining, loop$accumulator) {
+  while (true) {
+    let remaining = loop$remaining;
+    let accumulator = loop$accumulator;
+    if (remaining.hasLength(0)) {
+      return accumulator;
+    } else {
+      let item = remaining.head;
+      let rest = remaining.tail;
+      loop$remaining = rest;
+      loop$accumulator = prepend(item, accumulator);
+    }
+  }
+}
+function do_values_acc(loop$list, loop$acc) {
+  while (true) {
+    let list = loop$list;
+    let acc = loop$acc;
+    if (list.hasLength(0)) {
+      return reverse_and_concat(acc, toList([]));
+    } else {
+      let x = list.head;
+      let xs = list.tail;
+      loop$list = xs;
+      loop$acc = prepend(x[1], acc);
+    }
+  }
+}
+function do_values(dict) {
+  let list_of_pairs = map_to_list(dict);
+  return do_values_acc(list_of_pairs, toList([]));
+}
+function values(dict) {
+  return do_values(dict);
+}
+function delete$(dict, key) {
+  return map_remove(key, dict);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/string.mjs
@@ -1347,6 +1441,22 @@ function guard(requirement, consequence, alternative) {
   }
 }
 
+// build/dev/javascript/gleam_json/gleam_json_ffi.mjs
+function object(entries) {
+  return Object.fromEntries(entries);
+}
+function identity2(x) {
+  return x;
+}
+
+// build/dev/javascript/gleam_json/gleam/json.mjs
+function int2(input2) {
+  return identity2(input2);
+}
+function object2(entries) {
+  return object(entries);
+}
+
 // build/dev/javascript/lustre/lustre/effect.mjs
 var Effect = class extends CustomType {
   constructor(all) {
@@ -1354,6 +1464,11 @@ var Effect = class extends CustomType {
     this.all = all;
   }
 };
+function event(name2, data) {
+  return new Effect(toList([(_, emit2) => {
+    return emit2(name2, data);
+  }]));
+}
 function none() {
   return new Effect(toList([]));
 }
@@ -1401,14 +1516,14 @@ var Event = class extends CustomType {
 };
 
 // build/dev/javascript/lustre/lustre/attribute.mjs
-function attribute(name, value3) {
-  return new Attribute(name, from(value3), false);
+function attribute(name2, value3) {
+  return new Attribute(name2, from(value3), false);
 }
-function property(name, value3) {
-  return new Attribute(name, from(value3), true);
+function property(name2, value3) {
+  return new Attribute(name2, from(value3), true);
 }
-function on(name, handler) {
-  return new Event("on" + name, handler);
+function on(name2, handler) {
+  return new Event("on" + name2, handler);
 }
 function style(properties) {
   return attribute(
@@ -1424,8 +1539,11 @@ function style(properties) {
     )
   );
 }
-function class$(name) {
-  return attribute("class", name);
+function class$(name2) {
+  return attribute("class", name2);
+}
+function id(name2) {
+  return attribute("id", name2);
 }
 function value(val) {
   return attribute("value", val);
@@ -1581,15 +1699,15 @@ function createElementNode({ prev, next, dispatch, stack }) {
   let style2 = null;
   let innerHTML = null;
   for (const attr of next.attrs) {
-    const name = attr[0];
+    const name2 = attr[0];
     const value3 = attr[1];
     if (attr.as_property) {
-      if (el2[name] !== value3)
-        el2[name] = value3;
+      if (el2[name2] !== value3)
+        el2[name2] = value3;
       if (canMorph)
-        prevAttributes.delete(name);
-    } else if (name.startsWith("on")) {
-      const eventName = name.slice(2);
+        prevAttributes.delete(name2);
+    } else if (name2.startsWith("on")) {
+      const eventName = name2.slice(2);
       const callback = dispatch(value3);
       if (!handlersForEl.has(eventName)) {
         el2.addEventListener(eventName, lustreGenericEventHandler);
@@ -1597,27 +1715,27 @@ function createElementNode({ prev, next, dispatch, stack }) {
       handlersForEl.set(eventName, callback);
       if (canMorph)
         prevHandlers.delete(eventName);
-    } else if (name.startsWith("data-lustre-on-")) {
-      const eventName = name.slice(15);
+    } else if (name2.startsWith("data-lustre-on-")) {
+      const eventName = name2.slice(15);
       const callback = dispatch(lustreServerEventHandler);
       if (!handlersForEl.has(eventName)) {
         el2.addEventListener(eventName, lustreGenericEventHandler);
       }
       handlersForEl.set(eventName, callback);
-      el2.setAttribute(name, value3);
-    } else if (name === "class") {
+      el2.setAttribute(name2, value3);
+    } else if (name2 === "class") {
       className = className === null ? value3 : className + " " + value3;
-    } else if (name === "style") {
+    } else if (name2 === "style") {
       style2 = style2 === null ? value3 : style2 + value3;
-    } else if (name === "dangerous-unescaped-html") {
+    } else if (name2 === "dangerous-unescaped-html") {
       innerHTML = value3;
     } else {
       if (typeof value3 === "string")
-        el2.setAttribute(name, value3);
-      if (name === "value" || name === "selected")
-        el2[name] = value3;
+        el2.setAttribute(name2, value3);
+      if (name2 === "value" || name2 === "selected")
+        el2[name2] = value3;
       if (canMorph)
-        prevAttributes.delete(name);
+        prevAttributes.delete(name2);
     }
   }
   if (className !== null) {
@@ -1799,19 +1917,19 @@ var LustreClientApplication2 = class _LustreClientApplication {
   #model = null;
   #update = null;
   #view = null;
-  static start(flags, selector, init3, update3, view2) {
+  static start(flags, selector, init4, update4, view3) {
     if (!is_browser())
       return new Error(new NotABrowser());
     const root2 = selector instanceof HTMLElement ? selector : document.querySelector(selector);
     if (!root2)
       return new Error(new ElementNotFound(selector));
-    const app = new _LustreClientApplication(init3(flags), update3, view2, root2);
+    const app = new _LustreClientApplication(init4(flags), update4, view3, root2);
     return new Ok((msg) => app.send(msg));
   }
-  constructor([model, effects], update3, view2, root2 = document.body, isComponent = false) {
+  constructor([model, effects], update4, view3, root2 = document.body, isComponent = false) {
     this.#model = model;
-    this.#update = update3;
-    this.#view = view2;
+    this.#update = update4;
+    this.#view = view3;
     this.#root = root2;
     this.#effects = effects.all.toArray();
     this.#didUpdate = true;
@@ -1917,16 +2035,91 @@ var start = (app, selector, flags) => LustreClientApplication2.start(
   app.view
 );
 var is_browser = () => window && window.document;
+var is_registered = (name2) => is_browser() && !!window.customElements.get(name2);
 var prevent_default = (event2) => event2.preventDefault();
+
+// build/dev/javascript/lustre/client-component.ffi.mjs
+function register({ init: init4, update: update4, view: view3, on_attribute_change }, name2) {
+  if (!is_browser())
+    return new Error(new NotABrowser());
+  if (!name2.includes("-"))
+    return new Error(new BadComponentName(name2));
+  if (window.customElements.get(name2)) {
+    return new Error(new ComponentAlreadyRegistered(name2));
+  }
+  window.customElements.define(
+    name2,
+    makeComponent(init4, update4, view3, on_attribute_change)
+  );
+  return new Ok(void 0);
+}
+function makeComponent(init4, update4, view3, on_attribute_change) {
+  return class LustreClientComponent extends HTMLElement {
+    #root = document.createElement("div");
+    #application = null;
+    slotContent = [];
+    static get observedAttributes() {
+      return on_attribute_change[0]?.entries().map(([name2, _]) => name2) ?? [];
+    }
+    constructor() {
+      super();
+      on_attribute_change[0]?.forEach((decoder, name2) => {
+        Object.defineProperty(this, name2, {
+          get() {
+            return this[`_${name2}`] || this.getAttribute(name2);
+          },
+          set(value3) {
+            const prev = this[name2];
+            const decoded = decoder(value3);
+            if (decoded instanceof Ok && !isEqual(prev, value3)) {
+              this.#application ? this.#application.send(new Dispatch(decoded[0])) : window.requestAnimationFrame(
+                () => this.#application.send(new Dispatch(decoded[0]))
+              );
+            }
+            this[`_${name2}`] = value3;
+          }
+        });
+      });
+    }
+    connectedCallback() {
+      this.#application = new LustreClientApplication2(
+        init4(),
+        update4,
+        view3,
+        this.#root,
+        true
+      );
+      this.appendChild(this.#root);
+    }
+    attributeChangedCallback(key, _, next) {
+      this[key] = next;
+    }
+    disconnectedCallback() {
+      this.#application.send(new Shutdown());
+    }
+  };
+}
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init3, update3, view2, on_attribute_change) {
+  constructor(init4, update4, view3, on_attribute_change) {
     super();
-    this.init = init3;
-    this.update = update3;
-    this.view = view2;
+    this.init = init4;
+    this.update = update4;
+    this.view = view3;
     this.on_attribute_change = on_attribute_change;
+  }
+};
+var BadComponentName = class extends CustomType {
+  constructor(name2) {
+    super();
+    this.name = name2;
+  }
+};
+var ComponentAlreadyRegistered = class extends CustomType {
+  constructor(name2) {
+    super();
+    this.name = name2;
   }
 };
 var ElementNotFound = class extends CustomType {
@@ -1937,17 +2130,11 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init3, update3, view2) {
-  return new App(init3, update3, view2, new None());
+function application(init4, update4, view3) {
+  return new App(init4, update4, view3, new None());
 }
-function simple(init3, update3, view2) {
-  let init$1 = (flags) => {
-    return [init3(flags), none()];
-  };
-  let update$1 = (model, msg) => {
-    return [update3(model, msg), none()];
-  };
-  return application(init$1, update$1, view2);
+function component(init4, update4, view3, on_attribute_change) {
+  return new App(init4, update4, view3, new Some(on_attribute_change));
 }
 function start3(app, selector, flags) {
   return guard(
@@ -1992,8 +2179,8 @@ function input(attrs) {
 }
 
 // build/dev/javascript/lustre/lustre/event.mjs
-function on2(name, handler) {
-  return on(name, handler);
+function on2(name2, handler) {
+  return on(name2, handler);
 }
 function on_click(msg) {
   return on2("click", (_) => {
@@ -2025,49 +2212,187 @@ function on_submit(msg) {
   );
 }
 
-// build/dev/javascript/lustre_for_react_devs/model.mjs
-var User = class extends CustomType {
-  constructor(id, name) {
+// build/dev/javascript/lustre_for_react_devs/components/counter.mjs
+var Model = class extends CustomType {
+  constructor(value3, limit) {
     super();
-    this.id = id;
-    this.name = name;
+    this.value = value3;
+    this.limit = limit;
   }
 };
-var Model = class extends CustomType {
-  constructor(user, show_alert, alert_text, user_username, user_password) {
+var Increment = class extends CustomType {
+};
+var Decrement = class extends CustomType {
+};
+var LimitMsg = class extends CustomType {
+};
+function init2(limit) {
+  return [new Model(0, limit), none()];
+}
+function update2(model, msg) {
+  if (msg instanceof Increment) {
+    let $ = model.value === model.limit - 1;
+    if ($) {
+      debug(["val is incrementing to limit"]);
+      return [
+        model,
+        event(
+          "CounterLimit",
+          object2(toList([["val", int2(model.value)]]))
+        )
+      ];
+    } else {
+      return [model.withFields({ value: model.value + 1 }), none()];
+    }
+  } else if (msg instanceof Decrement) {
+    return [model.withFields({ value: model.value - 1 }), none()];
+  } else {
+    debug(["counter limit event hit in counter", msg]);
+    return [model, none()];
+  }
+}
+function view(model) {
+  let count = to_string2(model.value);
+  return div(
+    toList([]),
+    toList([
+      div(
+        toList([id("counter-view")]),
+        toList([
+          button(
+            toList([on_click(new Increment())]),
+            toList([text("+")])
+          ),
+          text(count),
+          button(
+            toList([on_click(new Decrement())]),
+            toList([text("-")])
+          )
+        ])
+      )
+    ])
+  );
+}
+var name = "lustre-counter";
+function counter(attributes, limit) {
+  let on_attribute_change = new$();
+  insert(
+    on_attribute_change,
+    "onCounterLimit",
+    (handler) => {
+      debug(["onCounterLimit handler: ", handler]);
+      return new Ok(new LimitMsg());
+    }
+  );
+  insert(
+    on_attribute_change,
+    "CounterLimit",
+    (handler) => {
+      debug(["CounterLimit handler: ", handler]);
+      return new Ok(new LimitMsg());
+    }
+  );
+  let component2 = component(
+    (_) => {
+      return init2(limit);
+    },
+    update2,
+    view,
+    on_attribute_change
+  );
+  let $ = (() => {
+    let $1 = is_registered(name);
+    if ($1) {
+      return new Ok(void 0);
+    } else {
+      let $2 = register(component2, name);
+      if (!$2.isOk()) {
+        throw makeError(
+          "assignment_no_match",
+          "components/counter",
+          41,
+          "counter",
+          "Assignment pattern did not match",
+          { value: $2 }
+        );
+      }
+      return $2;
+    }
+  })();
+  return element(name, attributes, toList([]));
+}
+
+// build/dev/javascript/lustre_for_react_devs/model.mjs
+var User = class extends CustomType {
+  constructor(id2, name2, username, password) {
+    super();
+    this.id = id2;
+    this.name = name2;
+    this.username = username;
+    this.password = password;
+  }
+};
+var Model2 = class extends CustomType {
+  constructor(user, show_alert, alert_text, user_username, user_password, user_store) {
     super();
     this.user = user;
     this.show_alert = show_alert;
     this.alert_text = alert_text;
     this.user_username = user_username;
     this.user_password = user_password;
+    this.user_store = user_store;
   }
 };
 
 // build/dev/javascript/lustre_for_react_devs/user.mjs
 var UserCreatedAccount = class extends CustomType {
+  constructor(user) {
+    super();
+    this.user = user;
+  }
 };
 var UserUpdatedAccount = class extends CustomType {
+  constructor(user) {
+    super();
+    this.user = user;
+  }
 };
 var UserDeletedAccount = class extends CustomType {
+  constructor(id2) {
+    super();
+    this.id = id2;
+  }
 };
 var UserSignedIn = class extends CustomType {
 };
 var UserSignedOut = class extends CustomType {
 };
 var UserEnteredUsername = class extends CustomType {
-  constructor(x0) {
+  constructor(username) {
     super();
-    this[0] = x0;
+    this.username = username;
   }
 };
 var UserEnteredPassword = class extends CustomType {
-  constructor(x0) {
+  constructor(password) {
     super();
-    this[0] = x0;
+    this.password = password;
   }
 };
 var UserSubmittedLoginForm = class extends CustomType {
+  constructor(username, password) {
+    super();
+    this.username = username;
+    this.password = password;
+  }
+};
+var UserSubmittedLoginFormSuccess = class extends CustomType {
+};
+var UserSubmittedLoginFormError = class extends CustomType {
+};
+var LoginFormUsernameError = class extends CustomType {
+};
+var LoginFormPasswordError = class extends CustomType {
 };
 function user_card_styles(signed_in) {
   return style(
@@ -2105,42 +2430,81 @@ function user_card(user) {
 }
 function update_user(model, msg) {
   if (msg instanceof UserCreatedAccount) {
-    return model.withFields({ user: new Some(new User(1, "Alice")) });
+    let user = msg.user;
+    return model.withFields({
+      user: new Some(user),
+      user_store: insert(model.user_store, user.id, user)
+    });
   } else if (msg instanceof UserUpdatedAccount) {
-    return model.withFields({ user: new Some(new User(1, "Bob")) });
+    let user = msg.user;
+    return model.withFields({
+      user: new Some(user),
+      user_store: insert(
+        delete$(model.user_store, user.id),
+        user.id,
+        user
+      )
+    });
   } else if (msg instanceof UserDeletedAccount) {
-    return model.withFields({ user: new None() });
+    let id2 = msg.id;
+    return model.withFields({
+      user: new None(),
+      user_store: delete$(model.user_store, id2)
+    });
   } else if (msg instanceof UserSignedIn) {
     return model.withFields({
       show_alert: true,
       alert_text: "You have signed in"
     });
   } else if (msg instanceof UserSignedOut) {
-    return new Model(new None(), true, "You have signed out", "", "");
+    return model.withFields({
+      show_alert: true,
+      alert_text: "You have signed out",
+      user: new None(),
+      user_username: "",
+      user_password: ""
+    });
   } else if (msg instanceof UserEnteredUsername) {
-    let val = msg[0];
+    let val = msg.username;
     return model.withFields({ user_username: val });
   } else if (msg instanceof UserEnteredPassword) {
-    let val = msg[0];
+    let val = msg.password;
     return model.withFields({ user_password: val });
-  } else {
+  } else if (msg instanceof UserSubmittedLoginForm) {
+    let username = msg.username;
+    let password = msg.password;
     debug("login form submitted");
-    let $ = model.user_password;
-    if ($ === "hunter2") {
-      return model.withFields({
-        user: new Some(new User(0, model.user_username)),
-        show_alert: true,
-        alert_text: "You have signed in"
+    let $ = (() => {
+      let _pipe = values(model.user_store);
+      return find(_pipe, (user) => {
+        return user.username === username;
       });
+    })();
+    if ($.isOk()) {
+      let user = $[0];
+      let $1 = user.password === password;
+      if ($1) {
+        debug("should login user");
+      } else {
+        debug("do not login user");
+      }
     } else {
-      debug("incorrect password");
-      return model.withFields({
-        user_password: "",
-        user_username: "",
-        show_alert: true,
-        alert_text: "Incorrect password"
-      });
+      debug("no user found!");
     }
+    return model;
+  } else if (msg instanceof LoginFormUsernameError) {
+    return model;
+  } else if (msg instanceof LoginFormPasswordError) {
+    return model;
+  } else if (msg instanceof UserSubmittedLoginFormSuccess) {
+    debug("success login!");
+    return model;
+  } else if (msg instanceof UserSubmittedLoginFormError) {
+    debug("login fail!");
+    return model;
+  } else {
+    debug("form submitted! again!");
+    return model;
   }
 }
 
@@ -2161,24 +2525,65 @@ var AlertOpened = class extends CustomType {
 };
 var AlertClosed = class extends CustomType {
 };
+var CounterMsg = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var CounterLimit = class extends CustomType {
+  constructor(val) {
+    super();
+    this.val = val;
+  }
+};
 
 // build/dev/javascript/lustre_for_react_devs/lustre_for_react_devs.mjs
-function init2(_) {
-  return new Model(new None(), false, "", "", "");
+function init3(_) {
+  let model = new Model2(
+    new None(),
+    false,
+    "",
+    "",
+    "",
+    from_list(
+      toList([
+        [1, new User(1, "Astarion", "the_most_handsome_vamp", "ihatecazador")],
+        [2, new User(2, "Shadowheart", "gods_favourite_princess", "mommy_shar")],
+        [3, new User(3, "Chuck", "evil_chuck", "spirit-crusher")],
+        [4, new User(4, "Aragorn", "elendil", "arwen")]
+      ])
+    )
+  );
+  return [model, none()];
 }
-function update2(model, msg) {
+function update3(model, msg) {
   if (msg instanceof UserMsg) {
     let inner = msg[0];
-    return update_user(model, inner);
+    return [update_user(model, inner), none()];
   } else if (msg instanceof OtherMsg) {
-    return model;
+    return [model, none()];
   } else if (msg instanceof AlertOpened) {
     let text$1 = msg.text;
     debug("alert opened");
-    return model.withFields({ alert_text: text$1, show_alert: true });
-  } else {
+    return [
+      model.withFields({ alert_text: text$1, show_alert: true }),
+      none()
+    ];
+  } else if (msg instanceof AlertClosed) {
     debug("alert closed");
-    return model.withFields({ alert_text: "", show_alert: false });
+    return [
+      model.withFields({ alert_text: "", show_alert: false }),
+      none()
+    ];
+  } else if (msg instanceof CounterMsg) {
+    let msg$1 = msg[0];
+    debug(["counter message!", msg$1]);
+    return [model, none()];
+  } else {
+    let val = msg.val;
+    debug(["counter message!", val]);
+    return [model, none()];
   }
 }
 function alert(alert_text) {
@@ -2243,7 +2648,16 @@ function header() {
     ])
   );
 }
-function view(model) {
+function view2(model) {
+  let handle_counter_limit = (event2) => {
+    debug(["msg: ", event2]);
+    return try$(
+      field("val", int)(event2),
+      (val) => {
+        return new Ok(new CounterLimit(val));
+      }
+    );
+  };
   return fragment(
     toList([
       header(),
@@ -2255,7 +2669,14 @@ function view(model) {
             toList([
               form(
                 toList([
-                  on_submit(new UserMsg(new UserSubmittedLoginForm())),
+                  on_submit(
+                    new UserMsg(
+                      new UserSubmittedLoginForm(
+                        model.user_username,
+                        model.user_password
+                      )
+                    )
+                  ),
                   class$("login-form shadow-sm")
                 ]),
                 toList([
@@ -2282,22 +2703,33 @@ function view(model) {
                     ])
                   ),
                   button(
-                    toList([on_click(new UserMsg(new UserSubmittedLoginForm()))]),
+                    toList([
+                      on_click(
+                        new UserMsg(
+                          new UserSubmittedLoginForm(
+                            model.user_username,
+                            model.user_password
+                          )
+                        )
+                      )
+                    ]),
                     toList([text("sign in")])
                   )
                 ])
               ),
               button(
-                toList([on_click(new UserMsg(new UserCreatedAccount()))]),
-                toList([text("create user")])
-              ),
-              button(
-                toList([on_click(new UserMsg(new UserUpdatedAccount()))]),
-                toList([text("update user")])
-              ),
-              button(
                 toList([
-                  on_click(new UserMsg(new UserDeletedAccount())),
+                  on_click(
+                    (() => {
+                      let $ = model.user;
+                      if ($ instanceof Some) {
+                        let user = $[0];
+                        return new UserMsg(new UserDeletedAccount(user.id));
+                      } else {
+                        return new UserMsg(new UserDeletedAccount(420));
+                      }
+                    })()
+                  ),
                   disabled(
                     (() => {
                       let $ = model.user;
@@ -2327,6 +2759,10 @@ function view(model) {
                 ]),
                 toList([text("sign out")])
               ),
+              counter(
+                toList([on2("CounterLimit", handle_counter_limit)]),
+                10
+              ),
               button(
                 toList([on_click(new AlertOpened("Hello!"))]),
                 toList([text("open alert")])
@@ -2348,13 +2784,13 @@ function view(model) {
   );
 }
 function main2() {
-  let app = simple(init2, update2, view);
+  let app = application(init3, update3, view2);
   let $ = start3(app, "#app", void 0);
   if (!$.isOk()) {
     throw makeError(
       "assignment_no_match",
       "lustre_for_react_devs",
-      20,
+      30,
       "main",
       "Assignment pattern did not match",
       { value: $ }

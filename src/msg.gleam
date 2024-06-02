@@ -1,3 +1,4 @@
+import components/counter
 import user.{type UserMsg}
 
 pub type Msg {
@@ -5,4 +6,6 @@ pub type Msg {
   OtherMsg
   AlertOpened(text: String)
   AlertClosed
+  CounterMsg(counter.Msg)
+  CounterLimit(val: Int)
 }

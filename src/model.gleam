@@ -1,7 +1,8 @@
+import gleam/dict.{type Dict}
 import gleam/option.{type Option}
 
 pub type User {
-  User(id: Int, name: String)
+  User(id: Int, name: String, username: String, password: String)
 }
 
 pub type Model {
@@ -11,6 +12,6 @@ pub type Model {
     alert_text: String,
     user_username: String,
     user_password: String,
-    user_store: List(User),
+    user_store: Dict(Int, User),
   )
 }

@@ -1,49 +1,101 @@
+import gleam/dict
+import gleam/dynamic
 import gleam/io
 import gleam/option.{None, Some}
+import gleam/result
 
 import lustre
-import lustre/attribute.{class, disabled, href, style, value}
+import lustre/attribute.{class, disabled, href, id, style, value}
+import lustre/effect
 import lustre/element.{fragment, text}
 import lustre/element/html.{a, button, div, form, input, li, nav, p, ul}
 import lustre/event.{on_click, on_input, on_submit}
 
-import model.{type Model, Model}
-import msg.{type Msg, AlertClosed, AlertOpened, OtherMsg, UserMsg}
+import components/counter.{counter}
+
+import model.{type Model, Model, User}
+import msg.{
+  type Msg, AlertClosed, AlertOpened, CounterLimit, CounterMsg, OtherMsg,
+  UserMsg,
+}
 import user.{
   UserCreatedAccount, UserDeletedAccount, UserEnteredPassword,
-  UserEnteredUsername, UserSignedOut, UserSubmittedLoginForm, UserUpdatedAccount,
-  update_user, user_card,
+  UserEnteredUsername, UserSignedOut, UserSubmittedLoginForm,
+  UserSubmittedLoginForm2, UserSubmittedLoginFormError,
+  UserSubmittedLoginFormSuccess, UserUpdatedAccount, update_user, user_card,
 }
 
 pub fn main() {
-  let app = lustre.simple(init, update, view)
+  let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
   Nil
 }
 
 fn init(_flags) {
-  Model(
-    user: None,
-    show_alert: False,
-    alert_text: "",
-    user_username: "",
-    user_password: "",
-    // this should be a dict, not a list
-    user_store: [],
-  )
+  let model =
+    Model(
+      user: None,
+      show_alert: False,
+      alert_text: "",
+      user_username: "",
+      user_password: "",
+      // sample data
+      user_store: dict.from_list([
+        #(
+          1,
+          User(
+            id: 1,
+            name: "Astarion",
+            username: "the_most_handsome_vamp",
+            password: "ihatecazador",
+          ),
+        ),
+        #(
+          2,
+          User(
+            id: 2,
+            name: "Shadowheart",
+            username: "gods_favourite_princess",
+            password: "mommy_shar",
+          ),
+        ),
+        #(
+          3,
+          User(
+            id: 3,
+            name: "Chuck",
+            username: "evil_chuck",
+            password: "spirit-crusher",
+          ),
+        ),
+        #(
+          4,
+          User(id: 4, name: "Aragorn", username: "elendil", password: "arwen"),
+        ),
+      ]),
+    )
+  #(model, effect.none())
 }
 
 fn update(model: Model, msg: Msg) {
   case msg {
-    UserMsg(inner) -> update_user(model, inner)
-    OtherMsg -> model
+    UserMsg(inner) -> #(update_user(model, inner), effect.none())
+    OtherMsg -> #(model, effect.none())
     AlertOpened(text) -> {
       io.debug("alert opened")
-      Model(..model, alert_text: text, show_alert: True)
+      #(Model(..model, alert_text: text, show_alert: True), effect.none())
     }
     AlertClosed -> {
       io.debug("alert closed")
-      Model(..model, alert_text: "", show_alert: False)
+      #(Model(..model, alert_text: "", show_alert: False), effect.none())
+    }
+    CounterMsg(msg) -> {
+      io.debug(#("counter message!", msg))
+      #(model, effect.none())
+    }
+    CounterLimit(val) -> {
+      io.debug(#("counter message!", val))
+      #(model, effect.none())
     }
   }
 }
@@ -97,13 +149,29 @@ fn header() {
 }
 
 fn view(model: Model) {
+  let handle_counter_limit = fn(event: dynamic.Dynamic) -> Result(
+    Msg,
+    List(dynamic.DecodeError),
+  ) {
+    io.debug(#("msg: ", event))
+    // if you don't decode the event, the mounted component disappears!
+    // Ok(OtherMsg)
+    use val <- result.try(dynamic.field("val", dynamic.int)(event))
+    Ok(CounterLimit(val))
+  }
+
   fragment([
     header(),
     html.main([class("pt-20")], [
       div([class("container")], [
         form(
           [
-            on_submit(UserMsg(UserSubmittedLoginForm)),
+            on_submit(
+              UserMsg(UserSubmittedLoginForm(
+                model.user_username,
+                model.user_password,
+              )),
+            ),
             class("login-form shadow-sm"),
           ],
           [
@@ -117,16 +185,27 @@ fn view(model: Model) {
               value(model.user_password),
               on_input(fn(val) { UserMsg(UserEnteredPassword(val)) }),
             ]),
-            button([on_click(UserMsg(UserSubmittedLoginForm))], [
-              text("sign in"),
-            ]),
+            button(
+              [
+                on_click(
+                  UserMsg(UserSubmittedLoginForm(
+                    model.user_username,
+                    model.user_password,
+                  )),
+                ),
+              ],
+              [text("sign in")],
+            ),
           ],
         ),
-        button([on_click(UserMsg(UserCreatedAccount))], [text("create user")]),
-        button([on_click(UserMsg(UserUpdatedAccount))], [text("update user")]),
+        // button([on_click(UserMsg(UserCreatedAccount()))], [text("create user")]),
+        // button([on_click(UserMsg(UserUpdatedAccount))], [text("update user")]),
         button(
           [
-            on_click(UserMsg(UserDeletedAccount)),
+            on_click(case model.user {
+              Some(user) -> UserMsg(UserDeletedAccount(user.id))
+              None -> UserMsg(UserDeletedAccount(420))
+            }),
             disabled(case model.user {
               Some(_) -> False
               None -> True
@@ -144,6 +223,7 @@ fn view(model: Model) {
           ],
           [text("sign out")],
         ),
+        counter([event.on("CounterLimit", handle_counter_limit)], 10),
         button([on_click(AlertOpened("Hello!"))], [text("open alert")]),
         user_card(model.user),
         case model.show_alert {
