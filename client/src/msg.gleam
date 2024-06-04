@@ -1,5 +1,6 @@
 import components/counter
-import user.{type UserMsg}
+import routes.{type Route}
+import user/user_msg.{type UserMsg}
 
 pub type Msg {
   UserMsg(UserMsg)
@@ -8,4 +9,5 @@ pub type Msg {
   AlertClosed
   CounterMsg(counter.Msg)
   CounterLimit(val: Int)
+  OnRouteChange(route: Route)
 }

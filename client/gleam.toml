@@ -1,4 +1,4 @@
-name = "lustre_for_react_devs"
+name = "app"
 version = "1.0.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
@@ -17,6 +17,7 @@ gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 lustre = ">= 4.2.4 and < 5.0.0"
 lustre_ui = ">= 0.6.0 and < 1.0.0"
 gleam_json = ">= 1.0.1 and < 2.0.0"
+modem = ">= 1.1.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

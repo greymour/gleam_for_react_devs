@@ -31,22 +31,6 @@ form.login-form {
   }
 }
 
-button {
-  outline: none;
-  padding: 0.25rem 0.5rem 0.35rem;
-  background: #4f73df;
-  border: 1px solid #0B0B0B;
-  border-radius: 0.5rem;
-  color: #FFFFFF;
-  transition: background 100ms ease-in-out;
-  font-size: 1rem;
-}
-
-button:hover {
-    background: #3b5ab5;
-    cursor: pointer;
-}
-
 button:disabled {
   background: #ababab;
   color: #F3F3F3;

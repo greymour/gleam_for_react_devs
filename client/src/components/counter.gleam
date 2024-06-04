@@ -10,6 +10,8 @@ import lustre/element
 import lustre/element/html
 import lustre/event
 
+import components/button.{button}
+
 pub type Model(msg) {
   Model(value: Int, limit: Int)
 }
@@ -76,9 +78,9 @@ pub fn view(model: Model(msg)) -> element.Element(Msg) {
 
   html.div([], [
     html.div([id("counter-view")], [
-      html.button([event.on_click(Increment)], [element.text("+")]),
+      button([event.on_click(Increment)], [element.text("+")]),
       element.text(count),
-      html.button([event.on_click(Decrement)], [element.text("-")]),
+      button([event.on_click(Decrement)], [element.text("-")]),
     ]),
   ])
 }
