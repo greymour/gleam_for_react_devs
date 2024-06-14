@@ -2224,9 +2224,8 @@ var Increment = class extends CustomType {
 };
 var Decrement = class extends CustomType {
 };
-var LimitMsg = class extends CustomType {
-};
 function init2(limit) {
+  debug(["counter init called"]);
   return [new Model(0, limit), none()];
 }
 function update2(model, msg) {
@@ -2244,14 +2243,12 @@ function update2(model, msg) {
     } else {
       return [model.withFields({ value: model.value + 1 }), none()];
     }
-  } else if (msg instanceof Decrement) {
-    return [model.withFields({ value: model.value - 1 }), none()];
   } else {
-    debug(["counter limit event hit in counter", msg]);
-    return [model, none()];
+    return [model.withFields({ value: model.value - 1 }), none()];
   }
 }
 function view(model) {
+  debug(["counter view called"]);
   let count = to_string2(model.value);
   return div(
     toList([]),
@@ -2275,23 +2272,8 @@ function view(model) {
 }
 var name = "lustre-counter";
 function counter(attributes, limit) {
+  debug(["counter main called"]);
   let on_attribute_change = new$();
-  insert(
-    on_attribute_change,
-    "onCounterLimit",
-    (handler) => {
-      debug(["onCounterLimit handler: ", handler]);
-      return new Ok(new LimitMsg());
-    }
-  );
-  insert(
-    on_attribute_change,
-    "CounterLimit",
-    (handler) => {
-      debug(["CounterLimit handler: ", handler]);
-      return new Ok(new LimitMsg());
-    }
-  );
   let component2 = component(
     (_) => {
       return init2(limit);
@@ -2300,26 +2282,29 @@ function counter(attributes, limit) {
     view,
     on_attribute_change
   );
-  let $ = (() => {
-    let $1 = is_registered(name);
-    if ($1) {
+  let r = (() => {
+    let $ = is_registered(name);
+    if ($) {
       return new Ok(void 0);
     } else {
-      let $2 = register(component2, name);
-      if (!$2.isOk()) {
+      let $1 = register(component2, name);
+      if (!$1.isOk()) {
         throw makeError(
           "assignment_no_match",
           "components/counter",
-          41,
+          33,
           "counter",
           "Assignment pattern did not match",
-          { value: $2 }
+          { value: $1 }
         );
       }
-      return $2;
+      return $1;
     }
   })();
-  return element(name, attributes, toList([]));
+  debug(["countered is_registered case result: ", r]);
+  let content = element(name, attributes, toList([]));
+  debug(["content to be rendered: ", content]);
+  return content;
 }
 
 // build/dev/javascript/lustre_for_react_devs/model.mjs

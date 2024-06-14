@@ -17,35 +17,31 @@ pub type Model(msg) {
 pub type Msg {
   Increment
   Decrement
-  LimitMsg
 }
 
 pub const name = "lustre-counter"
 
 // fix the decoders here (which means actually make decoders :D)
 pub fn counter(attributes: List(Attribute(a)), limit: Int) {
+  io.debug(#("counter main called"))
   let on_attribute_change = dict.new()
-  dict.insert(on_attribute_change, "onCounterLimit", fn(handler) {
-    io.debug(#("onCounterLimit handler: ", handler))
-    Ok(LimitMsg)
-  })
-  dict.insert(on_attribute_change, "CounterLimit", fn(handler) {
-    io.debug(#("CounterLimit handler: ", handler))
-    Ok(LimitMsg)
-  })
   let component =
     lustre.component(fn(_) { init(limit) }, update, view, on_attribute_change)
-  let _ = case lustre.is_registered(name) {
+  let r = case lustre.is_registered(name) {
     True -> Ok(Nil)
     False -> {
       let assert Ok(_) = lustre.register(component, name)
     }
   }
+  io.debug(#("countered is_registered case result: ", r))
   // when the event fires the view disappears, idk
-  element.element(name, attributes, [])
+  let content = element.element(name, attributes, [])
+  io.debug(#("content to be rendered: ", content))
+  content
 }
 
 fn init(limit: Int) {
+  io.debug(#("counter init called"))
   #(Model(0, limit), effect.none())
 }
 
@@ -64,14 +60,11 @@ pub fn update(model: Model(msg), msg) {
       }
     }
     Decrement -> #(Model(..model, value: model.value - 1), effect.none())
-    LimitMsg -> {
-      io.debug(#("counter limit event hit in counter", msg))
-      #(model, effect.none())
-    }
   }
 }
 
 pub fn view(model: Model(msg)) -> element.Element(Msg) {
+  io.debug(#("counter view called"))
   let count = int.to_string(model.value)
 
   html.div([], [
